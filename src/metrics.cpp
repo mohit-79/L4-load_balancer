@@ -9,5 +9,11 @@ for(auto& h : backend_hits) h.store(0);
 
 }
 std::atomic<uint64_t> rr_counter{0};
-std::atomic<int> backend1_active{0};
-std::atomic<int> backend2_active{0};
+std::vector<std::atomic<int>>
+backend_active(backends.size());
+void initBackendActive(){
+    for(auto& x : backend_active)
+{
+    x.store(0);
+}
+}

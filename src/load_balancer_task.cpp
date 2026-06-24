@@ -38,11 +38,29 @@ void LoadBalancerTask::execute(int worker_id)
     //     backend_port = 8082;
     //     backend2_active++;
     // }
-    int index= rr++ % backends.size();
-    int backend_port =
-    backends[
-        index //thread-safe increment
-    ];
+    // int index= rr++ % backends.size();
+    // int backend_port =
+    // backends[
+    //     index //thread-safe increment
+    // ];
+
+    int index = 0;
+
+for(size_t i = 1;
+    i < backends.size();
+    i++)
+{
+    if(
+        backend_active[i].load()
+        <
+        backend_active[index].load()
+    )
+    {
+        index = i;
+    }
+}
+    int backend_port = backends[index];
+    backend_active[index]++; // Increment hit counter for the selected backend
 
 backend_hits[index]++;
     std::cout
@@ -69,6 +87,7 @@ backend_hits[index]++;
     {
         std::cerr << "Failed to create backend socket\n";
         close(client_fd); // close: Closes descriptor
+        backend_active[index]--;// ???
         return;
     }
 
@@ -102,6 +121,7 @@ backend_hits[index]++;
             << "Connect failed to backend "
             << backend_port
             << std::endl;
+            backend_active[index]--;
         // if (backend_port == 8081)
             // backend1_active--;
         // else
@@ -196,6 +216,7 @@ std::cout << std::endl;
             << std::endl;
 
         if (bytes <= 0) // Break loop when data stream terminates
+            backend_active[index]--;
             break;
 
         chunk++;
@@ -224,8 +245,9 @@ std::cout << std::endl;
 
     close(client_fd); // Reclaim client resource
     close(backend_fd); // Reclaim backend resource
-    if (backend_port == 8081)
-        backend1_active--;
-    else
-        backend2_active--;
+    // if (backend_port == 8081)
+        // backend1_active--;
+    // else
+        // backend2_active--;
+        backend_active[index]--;
 }
