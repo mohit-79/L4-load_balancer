@@ -21,9 +21,12 @@
 
 <h1>L4 Load Balancer Dashboard</h1>
 
-<p>Total Requests: <span id="total">0</span></p>
+<!-- <p>Total Requests: <span id="total">0</span></p>
 <p>Backend1 Hits: <span id="b1">0</span></p>
-<p>Backend2 Hits: <span id="b2">0</span></p>
+<p>Backend2 Hits: <span id="b2">0</span></p> -->
+<p>Total Requests: <span id="total">0</span></p>
+
+<div id="backendStats"></div>
 
 <canvas id="chart"></canvas>
 
@@ -113,28 +116,35 @@ new Chart(ctx,{
     data:{
         labels:[],
 
+        // datasets:[
+        // {
+        //     label:"Total Requests",
+        //     data:[],
+        //     tension:0.3,
+        //     borderWidth:2,
+        //     borderColor:"blue"
+        // },
+        // {
+        //     label:"Backend1 Hits",
+        //     data:[],
+        //     tension:0.3,
+        //     borderWidth:2,
+        //     borderColor:"green"
+        // },
+        // {
+        //     label:"Backend2 Hits",
+        //     data:[],
+        //     tension:0.3,
+        //     borderWidth:2,
+        //     borderColor:"red"
+        // }
+        // ]
         datasets:[
-        {
-            label:"Total Requests",
-            data:[],
-            tension:0.3,
-            borderWidth:2,
-            borderColor:"blue"
-        },
-        {
-            label:"Backend1 Hits",
-            data:[],
-            tension:0.3,
-            borderWidth:2,
-            borderColor:"green"
-        },
-        {
-            label:"Backend2 Hits",
-            data:[],
-            tension:0.3,
-            borderWidth:2,
-            borderColor:"red"
-        }
+            {
+                label:"Total Requests",
+                data:[],
+                borderWidth:2
+            }
         ]
     },
 
@@ -182,30 +192,105 @@ ws.onopen = () =>
         1000
     );
 };
-
+let backendDatasetsCreated = false;
 ws.onmessage = (event) =>
 {
     const data =
         JSON.parse(event.data);
+        if(!backendDatasetsCreated)
+{
+    const stats =
+        document.getElementById(
+            "backendStats"
+        );
+
+    for(const key in data)
+    {
+        if(
+            key.startsWith(
+                "backend"
+            )
+        )
+        {
+            const p =
+                document.createElement(
+                    "p"
+                );
+
+            p.innerHTML =
+                key +
+                ": <span id='" +
+                key +
+                "'>0</span>";
+
+            stats.appendChild(p);
+
+            chart.data.datasets.push(
+            {
+                label:key,
+                data:[],
+                borderWidth:2
+            });
+        }
+    }
+
+    backendDatasetsCreated =
+        true;
+}
 
     document.getElementById("total")
         .innerText = data.total;
 
-    document.getElementById("b1")
-        .innerText = data.backend1;
+    // document.getElementById("b1")
+    //     .innerText = data.backend1;
 
-    document.getElementById("b2")
-        .innerText = data.backend2;
+    // document.getElementById("b2")
+    //     .innerText = data.backend2;
+    let datasetIndex = 1;
+
+for(const key in data)
+{
+    if(
+        key.startsWith(
+            "backend"
+        )
+    )
+    {
+        document
+            .getElementById(key)
+            .innerText =
+            data[key];
+
+        chart
+            .data
+            .datasets[
+                datasetIndex
+            ]
+            .data
+            .push(
+                data[key]
+            );
+
+        datasetIndex++;
+    }
+}
 
     chart.data.labels.push(
         new Date()
             .toLocaleTimeString()
     );
 
-    chart.data.datasets[0]
-        .data.push(
-            data.total
-        );
+    // chart.data.datasets[0]
+    //     .data.push(
+    //         data.total
+    //     );
+    for(
+    const ds
+    of chart.data.datasets
+)
+{
+    ds.data.shift();
+}
 
     chart.data.datasets[1]
         .data.push(

@@ -64,16 +64,18 @@ void telemetry_thread()
         // Construct JSON payload using atomic metric counters
         std::string json =
             "{\"total\":"
-            + std::to_string(total_requests.load())
-            + ",\"backend1\":"
-            + std::to_string(backend1_hits.load())
-            + ",\"backend2\":"
-            + std::to_string(backend2_hits.load())
-            +",\"active1\":"
-            + std::to_string(backend1_active.load())
-            +",\"active2\":"
-            + std::to_string(backend2_active.load())
-            + "}";
+            + std::to_string(total_requests.load());
+            for(size_t i = 0; i < backend_hits.size(); i++)
+            {
+                json +=
+                    ",\"backend"
+                    + std::to_string(i + 1)
+                    + "\":"
+                    + std::to_string(
+                        backend_hits[i].load()
+                    );
+            }
+            json += "}";
             
         std::cout << "UDP SEND: " << json << std::endl;
         

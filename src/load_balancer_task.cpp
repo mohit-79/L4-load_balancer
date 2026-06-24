@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <atomic>
+#include <backend_pool.h>
 
 // ============================================================================
 // CONSTRUCTOR
@@ -25,18 +26,29 @@ void LoadBalancerTask::execute(int worker_id)
     static std::atomic<int> rr{0}; // rr: Round-robin counter (Thread-safe)
 
     // Select routing port based on counter parity
-    int backend_port;
+    // int backend_port;
 
-    if (backend1_active.load() <= backend2_active.load())
-    {
-        backend_port = 8081;
-        backend1_active++;
-    }
-    else
-    {
-        backend_port = 8082;
-        backend2_active++;
-    }
+    // if (backend1_active.load() <= backend2_active.load())
+    // {
+    //     backend_port = 8081;
+    //     backend1_active++;
+    // }
+    // else
+    // {
+    //     backend_port = 8082;
+    //     backend2_active++;
+    // }
+    int index= rr++ % backends.size();
+    int backend_port =
+    backends[
+        index //thread-safe increment
+    ];
+
+backend_hits[index]++;
+    std::cout
+<< "backend_hits[" << index << "] = "
+<< backend_hits[index].load()
+<< std::endl;
         
 
     std::cout
@@ -90,26 +102,31 @@ void LoadBalancerTask::execute(int worker_id)
             << "Connect failed to backend "
             << backend_port
             << std::endl;
-        if (backend_port == 8081)
-            backend1_active--;
-        else
-            backend2_active--;
+        // if (backend_port == 8081)
+            // backend1_active--;
+        // else
+            // backend2_active--;
         close(client_fd); // Cleanup client
         close(backend_fd); // Cleanup backend
         return;
     }
     
     // Track target hit distribution
-    if (backend_port == 8081)
-        backend1_hits++;
-    else
-        backend2_hits++;
+    // backend_active[index]--; // Increment hit counter for the selected backend
         
+   std::cout
+<< "Total=" << total_requests;
+
+for(size_t i = 0; i < backends.size(); i++)
+{
     std::cout
-    << "Total=" << total_requests
-    << " B1=" << backend1_hits
-    << " B2=" << backend2_hits
-    << std::endl;
+        << " B"
+        << (i + 1)
+        << "="
+        << backend_hits[i];
+}
+
+std::cout << std::endl;
 
     char buffer[8192]; // Fixed packet buffer size
 
