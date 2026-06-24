@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>WebSocket Test</h1>
+
+<div id="output"></div>
+
+<script>
+const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+ws.onmessage = (event) => {
+    console.log(event.data);
+
+    document.getElementById("output").innerHTML +=
+        "<p>" + event.data + "</p>";
+};
+</script>
+
+</body>
+</html>

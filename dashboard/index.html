@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>L4 Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body{
+            font-family:sans-serif;
+            padding:20px;
+        }
+
+        canvas{
+            max-width:1000px;
+            max-height:500px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>L4 Load Balancer Dashboard</h1>
+
+<p>Total Requests: <span id="total">0</span></p>
+<p>Backend1 Hits: <span id="b1">0</span></p>
+<p>Backend2 Hits: <span id="b2">0</span></p>
+
+<canvas id="chart"></canvas>
+
+<!-- <script>
+
+const ctx =
+document.getElementById("chart");
+
+const chart =
+new Chart(ctx,{
+    type:"line",a
+
+    data:{
+        labels:[],
+
+        datasets:[
+        {
+            label:"Total Requests",
+            data:[]
+        }]
+    }
+});
+
+const ws =
+new WebSocket(
+"ws://127.0.0.1:8000/ws"
+);
+
+ws.onopen = () =>
+{
+    console.log("connected");
+
+    setInterval(
+        () => ws.send("ping"),
+        1000
+    );
+};
+
+ws.onmessage = (event)=>
+{
+    const data =
+    JSON.parse(event.data);
+
+    document.getElementById("total")
+        .innerText = data.total;
+
+    document.getElementById("b1")
+        .innerText = data.backend1;
+
+    document.getElementById("b2")
+        .innerText = data.backend2;
+
+    chart.data.labels.push(
+        new Date()
+        .toLocaleTimeString()
+    );
+
+    chart.data.datasets[0]
+        .data.push(data.total);
+
+    if(
+        chart.data.labels.length > 30
+    )
+    {
+        chart.data.labels.shift();
+
+        chart.data.datasets[0]
+            .data.shift();
+    }
+
+    chart.update();
+};
+
+</script> -->
+
+<script>
+
+const ctx =
+document.getElementById("chart");
+
+const MAX_POINTS = 50;
+
+const chart =
+new Chart(ctx,{
+    type:"line",
+
+    data:{
+        labels:[],
+
+        datasets:[
+        {
+            label:"Total Requests",
+            data:[],
+            tension:0.3,
+            borderWidth:2,
+            borderColor:"blue"
+        },
+        {
+            label:"Backend1 Hits",
+            data:[],
+            tension:0.3,
+            borderWidth:2,
+            borderColor:"green"
+        },
+        {
+            label:"Backend2 Hits",
+            data:[],
+            tension:0.3,
+            borderWidth:2,
+            borderColor:"red"
+        }
+        ]
+    },
+
+    options:{
+        responsive:true,
+
+        animation:false,
+
+        scales:{
+            x:{
+                ticks:{
+                    maxTicksLimit:10
+                }
+            },
+
+            y:{
+                beginAtZero:true
+            }
+        }
+    }
+});
+
+const ws =
+new WebSocket(
+    "ws://127.0.0.1:8000/ws"
+);
+
+ws.onopen = () =>
+{
+    console.log(
+        "WebSocket connected"
+    );
+
+    setInterval(
+        () =>
+        {
+            if(
+                ws.readyState ===
+                WebSocket.OPEN
+            )
+            {
+                ws.send("ping");
+            }
+        },
+        1000
+    );
+};
+
+ws.onmessage = (event) =>
+{
+    const data =
+        JSON.parse(event.data);
+
+    document.getElementById("total")
+        .innerText = data.total;
+
+    document.getElementById("b1")
+        .innerText = data.backend1;
+
+    document.getElementById("b2")
+        .innerText = data.backend2;
+
+    chart.data.labels.push(
+        new Date()
+            .toLocaleTimeString()
+    );
+
+    chart.data.datasets[0]
+        .data.push(
+            data.total
+        );
+
+    chart.data.datasets[1]
+        .data.push(
+            data.backend1
+        );
+
+    chart.data.datasets[2]
+        .data.push(
+            data.backend2
+        );
+
+    while(
+        chart.data.labels.length
+        > MAX_POINTS
+    )
+    {
+        chart.data.labels.shift();
+
+        chart.data.datasets.forEach(
+            dataset =>
+            dataset.data.shift()
+        );
+    }
+
+    chart.update("none");
+};
+
+ws.onerror = (err) =>
+{
+    console.log(
+        "WebSocket error",
+        err
+    );
+};
+
+ws.onclose = () =>
+{
+    console.log(
+        "WebSocket disconnected"
+    );
+};
+
+</script>
+<!-- <script>
+
+const ctx =
+document.getElementById("chart");
+
+const MAX_POINTS = 50;
+
+const chart =
+new Chart(ctx,{
+    type:"line",
+
+    data:{
+        labels:[],
+        datasets:[
+        {
+            label:"Total Requests",
+            data:[],
+            tension:0.3,
+            borderWidth:2
+        }]
+    },
+
+    options:{
+        responsive:true,
+
+        animation:false,
+
+        scales:{
+            x:{
+                ticks:{
+                    maxTicksLimit:10
+                }
+            },
+
+            y:{
+                beginAtZero:true
+            }
+        }
+    }
+});
+
+const ws =
+new WebSocket(
+    "ws://127.0.0.1:8000/ws"
+);
+
+ws.onopen = () =>
+{
+    console.log("WebSocket connected");
+
+    setInterval(
+        () =>
+        {
+            if(
+                ws.readyState === WebSocket.OPEN
+            )
+            {
+                ws.send("ping");
+            }
+        },
+        1000
+    );
+};
+
+ws.onmessage = (event) =>
+{
+    const data =
+        JSON.parse(event.data);
+
+    document.getElementById("total")
+        .innerText = data.total;
+
+    document.getElementById("b1")
+        .innerText = data.backend1;
+
+    document.getElementById("b2")
+        .innerText = data.backend2;
+
+    chart.data.labels.push(
+        new Date()
+            .toLocaleTimeString()
+    );
+
+    chart.data.datasets[0]
+        .data.push(
+            data.total
+        );
+
+    while(
+        chart.data.labels.length
+        > MAX_POINTS
+    )
+    {
+        chart.data.labels.shift();
+
+        chart.data.datasets[0]
+            .data.shift();
+    }
+
+    chart.update("none");
+};
+
+ws.onerror = (err) =>
+{
+    console.log(
+        "WebSocket error",
+        err
+    );
+};
+
+ws.onclose = () =>
+{
+    console.log(
+        "WebSocket disconnected"
+    );
+};
+
+</script> -->
+
+</body> 
+</html>
